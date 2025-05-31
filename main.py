@@ -60,7 +60,8 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 # %%Model Configuration
 #----------------------------------------------------------------------------------
 latent_dim = 2
-ae_model = AutoEncoder(in_dim, latent_dim)
+layer_sizes = [in_dim, 10, 8, 4, latent_dim]
+ae_model = AutoEncoder(layer_sizes)
 d_svdd_model = DeepSVDD(ae_model.encoder)
 ae_loss_fn = nn.MSELoss()
 

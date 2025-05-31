@@ -3,29 +3,43 @@ import torch.nn as nn
 import torch.nn.init as init
 
 # Define an Autoencoder model with Glorot initialization
+# Note the AE architecture must be modified for each specific dataset.
 class AutoEncoder(nn.Module):
-    def __init__(self, input_size,latent_dim):
-        super().__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(input_size,10),
-            nn.LeakyReLU(0.1),
-            nn.Linear(10, 8),
-            nn.LeakyReLU(0.1),
-            nn.Linear(8, 4),
-            nn.LeakyReLU(0.1),
-            nn.Linear(4, latent_dim),
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 4),
-            nn.LeakyReLU(0.1),
-            nn.Linear(4, 8),
-            nn.LeakyReLU(0.1),
-            nn.Linear(8, 10),
-            nn.LeakyReLU(0.1),
-            nn.Linear(10, input_size)
-        )
+    def __init__(self, layer_sizes):
+        """
+        A class to construct an autoencoder-like neural network model consisting
+        of an encoder-decoder structure. This architecture builds both the encoder
+        and decoder based on a configurable list of layer sizes, and uses the
+        LeakyReLU activation function between layers, where appropriate.
+        Weights of the model are initialized upon instantiation.
 
-        self.latent_dim = latent_dim
+        :param layer_sizes: A list that defines the dimensions of each layer in the autoencoder
+            structure. The first element is the input size, the last is the latent or bottleneck
+            size, and the intermediate elements are the hidden layer sizes. Used to configure
+            both the encoder and decoder parts of the autoencoder.
+        :type layer_sizes: list[int]
+        """
+        super().__init__()
+
+        # Build the encoder
+        encoder_layers = []
+        for i in range(len(layer_sizes) - 1):
+            encoder_layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
+            if i < len(layer_sizes) - 2:
+                # Add a LeakyReLU activation function between layers except for the last one
+                encoder_layers.append(nn.LeakyReLU(0.1))
+        self.encoder = nn.Sequential(*encoder_layers)
+
+        # Build the decoder
+        decoder_layers = []
+        for i in range(len(layer_sizes) - 1, 0, -1):
+            decoder_layers.append(nn.Linear(layer_sizes[i], layer_sizes[i - 1]))
+            if i > 1:
+                # Add a LeakyReLU activation function between layers except for the first one
+                decoder_layers.append(nn.LeakyReLU(0.1))
+        self.decoder = nn.Sequential(*decoder_layers)
+
+        self.latent_dim = layer_sizes[-1]
         self._initialize_weights()
 
     def forward(self, x):
